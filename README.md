@@ -1,4 +1,4 @@
-# Long Mạch 3D · Vọng Nguyệt — v0.2
+# Long Mạch 3D · Vọng Nguyệt — v0.3
 
 Game nhập vai 3D chơi đơn trên trình duyệt PC/điện thoại. Mỗi người chơi có tiến trình riêng trong trình duyệt. Đây là bản chơi đơn, chưa có chơi chung bản đồ.
 
@@ -13,11 +13,15 @@ Lấy cảm hứng từ vòng lặp nhiệm vụ, chiến đấu, khai thác và
 
 ## Nội dung
 - Bản đồ 3D, camera xoay/nghiêng/thu phóng; ba lớp Kiếm khách, Linh sư, Thương vệ.
-- Hai chương, 12 nhiệm vụ, hai boss, ba trụ phong ấn.
+- 5 khu vực: Vân Sơn, Trúc Hải, Băng Hồ, Hỏa Sơn, Thiên Cung; tổng 28 nhiệm vụ, 6 boss, minimap và cổng chuyển vùng.
+- Nhân vật 3D xoay được trong cửa sổ Trang bị; 11 ô đồ có hình minh họa, mặc/tháo đổi ngoại hình trong menu và ngoài map.
+- 5 phẩm chất: Trắng, Xanh lá, Xanh lam, Đỏ, Vàng. 9 loại nguyên liệu, mỗi loại có kho khóa/giao dịch riêng.
+- Ghép nguyên liệu 10:1; trang bị ghép 2:1 tới bậc IV, cường hóa +8, tiêu hao để thăng màu. Ghép/chế thành công 100%, đầu ra giao dịch 20%.
+- Công thức theo nhóm giáp/vũ khí/phụ kiện/cánh; xem nguyên liệu thiếu, bảo vệ đồ, ưu tiên tiêu hao hàng khóa hoặc giao dịch.
 - 9 nhánh nâng cấp: binh khí, chiến giáp, pháp khí; thể phách, chân khí, tâm pháp; Long trảm, Địa chấn, Hồi nguyên.
 - Auto farm chọn loại quái, đào Thanh Thạch, hái linh thảo, hấp thu linh khí; auto nhiệm vụ tìm đường, tự vệ và hồi phục.
 - Auto nhiệm vụ dừng ở hội thoại nhận thưởng và yêu cầu nâng cấp. Người chơi tự quyết định chi tiêu.
-- Ba linh thú với chỉ số và hình dáng riêng; thú cưỡi mở sau nhiệm vụ 6.
+- Tám pet với chỉ số, phẩm chất, điều kiện mở và hình dáng riêng; thú cưỡi mở sau nhiệm vụ 6.
 - Chế thuốc, hành trang, truy nã, bốn thành tựu, bản đồ và nhật ký.
 - Quái và tài nguyên hồi sinh. Boss chỉ hạ một lần mỗi lượt chơi.
 
@@ -33,20 +37,27 @@ Lấy cảm hứng từ vòng lặp nhiệm vụ, chiến đấu, khai thác và
 | Esc | Dừng auto hoặc đóng bảng |
 | R / V | Dùng thuốc / thú cưỡi |
 | C / K / L / P | Trang bị / nội công / kỹ năng / linh thú |
-| B / J / M / O | Hành trang / nhật ký / bản đồ / cài đặt |
+| B / J / M / O | Nguyên liệu / nhật ký / bản đồ / cài đặt |
+| I / N | Lò rèn / thế giới và chuyển map |
 | H / Z / X | Đi về làng / xoay camera |
 | ? | Bảng phím tắt |
 
 Chuột: chạm đất để đi, kéo để xoay/nghiêng, cuộn để thu phóng. Điện thoại có cụm di chuyển và các nút thao tác. Thu gọn nhiệm vụ bằng tiêu đề CHÍNH TUYẾN để nhìn rộng hơn.
 
 ## Bản lưu
-Lưu tự động trong trình duyệt; xuất/nhập JSON tại Hành trang. Bản lưu 2D hợp lệ tự chuyển sang v2 và giữ nguyên khóa dữ liệu cũ. Bản local và website có kho lưu riêng: xuất/nhập để chuyển nhân vật. Reset/nhập có bước xác nhận và sao lưu bản hiện tại. Chuyển tab tạm dừng; auto không chạy khi đóng hoặc ẩn game.
+Lưu tự động trong trình duyệt; xuất/nhập JSON tại Hành trang. Bản lưu 2D/v2 hợp lệ tự chuyển sang v3 và giữ nguyên khóa dữ liệu cũ. Bản local và website có kho lưu riêng: xuất/nhập để chuyển nhân vật. Reset/nhập có bước xác nhận và sao lưu bản hiện tại. Chuyển tab tạm dừng; auto không chạy khi đóng hoặc ẩn game.
 
 ## Phạm vi
 Đây là prototype 3D phong cách low-poly, chưa phải đồ họa điện ảnh. Chơi đơn, chưa có tài khoản máy chủ, đồng bộ đám mây, bang hội, PvP, giao dịch, MMO hoặc blockchain. Các hệ thống đó cần máy chủ và thiết kế kinh tế riêng ở giai đoạn tiếp theo.
 
 ## Kiểm tra
-Chạy `node test-3d.mjs` và `node test-campaign.mjs`.
-21 kiểm thử logic và ba hành trình trọn 12 nhiệm vụ với cả ba lớp; không cộng tài nguyên giả trong kiểm thử hành trình. Kiểm tra giao diện/cảnh 3D trên trình duyệt máy tính. Chưa kiểm thử trên điện thoại vật lý.
+Chạy `node test-3d.mjs`, `node test-campaign.mjs`, `node test-progression.mjs`, `node test-avatar.mjs`.
+21 kiểm thử cũ, 9 nhóm kiểm thử kinh tế/khu vực và 3 lớp mô hình trang bị đã qua. Ba lớp hoàn thành 12 nhiệm vụ cũ; mô phỏng tiếp 16 nhiệm vụ mới thu thập và chiến đấu thực tế. Kiểm tra giao diện desktop và viewport điện thoại 390×844. Chưa kiểm thử trên điện thoại vật lý. Xem [báo cáo kiểm tra](docs/QA-v0.3.md).
 
 Thư viện Three.js 0.180.0 đóng gói trong dist/vendor; giấy phép MIT kèm LICENSE.
+
+## Đối chiếu MIR4 và quy tắc riêng
+
+Đã đọc trang giới thiệu, bách khoa và các bài Character/Craft/Forge/Spirit cùng Mirkit. Xem [phân tích nguồn và phạm vi](docs/MIR4-DOI-CHIEU.md).
+
+Cường hóa hiện chắc chắn lên +8, khác vùng rủi ro của MIR4. Nhãn giao dịch hiện lưu trên vật phẩm; chưa có chợ nhiều người. Ghép bậc chỉ dùng đồ +0 chưa mặc/chưa bảo vệ. Đồng và bình thuốc không chia phẩm chất.

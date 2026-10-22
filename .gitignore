@@ -4,3 +4,6 @@
 *.zip
 *.tar.gz
 node_modules/
+
+qa-v0.3-save.json
+qa-smoke.html
