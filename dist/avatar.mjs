@@ -1,5 +1,6 @@
+import {createCreature} from './creatures.mjs?v=0.5';
 import * as T from './vendor/three.module.js';
-import {GRADES,SLOTS} from './economy.mjs?v=0.4';
+import {GRADES,SLOTS} from './economy.mjs?v=0.5';
 const skin=0xd6b28d,hair=0x20272b;
 function mesh(parent,geometry,color,x=0,y=0,z=0,metal=false,glow=0){const material=new T.MeshStandardMaterial({color,metalness:metal?.65:.12,roughness:metal?.3:.75,emissive:color,emissiveIntensity:glow});const m=new T.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
 const box=(p,w,h,d,c,x,y,z,metal=false)=>mesh(p,new T.BoxGeometry(w,h,d),c,x,y,z,metal);
@@ -54,11 +55,11 @@ export function itemIcon(key,grade=0){const c=GRADES[grade]?.hex||'#c8c5b8';retu
 export function mountAvatar(canvas,s){
  const renderer=new T.WebGLRenderer({canvas,antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;
  const scene=new T.Scene();scene.add(new T.HemisphereLight(0xc3e8ff,0x403422,2.5));const key=new T.DirectionalLight(0xffe1af,4);key.position.set(3,6,5);scene.add(key);const rim=new T.DirectionalLight(0x87c4ff,3);rim.position.set(-3,3,-3);scene.add(rim);
- const model=makeCharacter({kiem:0x386d75,phap:0x685185,thuong:0x805144}[s.class],s.class);dressCharacter(model,s);scene.add(model);model.rotation.y=-.32;
+ const model=s.previewCreature?createCreature(s.previewCreature,s.previewRide):makeCharacter({kiem:0x386d75,phap:0x685185,thuong:0x805144}[s.class],s.class);if(!s.previewCreature)dressCharacter(model,s);else {const size=new T.Box3().setFromObject(model).getSize(new T.Vector3());model.scale.multiplyScalar(2.8/Math.max(size.x,size.y,size.z));}scene.add(model);model.rotation.y=-.32;
  const floor=mesh(scene,new T.CylinderGeometry(1.2,1.4,.16,48),0x24434c,0,-.13,0,true);const ring=mesh(scene,new T.TorusGeometry(1.18,.025,8,64),0xd6bd81,0,-.04,0,true,.2);ring.rotation.x=Math.PI/2;
  const camera=new T.PerspectiveCamera(36,1,.1,50);let zoom=8.2;const resize=()=>{const r=canvas.getBoundingClientRect();renderer.setSize(Math.max(1,r.width),Math.max(1,r.height),false);camera.aspect=r.width/Math.max(1,r.height);camera.updateProjectionMatrix();};const observer=new ResizeObserver(resize);observer.observe(canvas);resize();
  let frame,stopped=false,drag=null;canvas.onpointerdown=e=>{drag=e.clientX;canvas.setPointerCapture(e.pointerId);};canvas.onpointermove=e=>{if(drag!==null){model.rotation.y+=(e.clientX-drag)*.012;drag=e.clientX;}};canvas.onpointerup=canvas.onpointercancel=()=>drag=null;
  const wheel=e=>{e.preventDefault();zoom=Math.max(5.4,Math.min(9,zoom+e.deltaY*.005));};canvas.addEventListener('wheel',wheel,{passive:false});
- const render=t=>{if(stopped)return;if(!document.hidden){camera.position.set(0,2.15,zoom);camera.lookAt(0,1.65,0);model.userData.rig.position.y=Math.sin(t*.0018)*.018;renderer.render(scene,camera);}frame=requestAnimationFrame(render);};frame=requestAnimationFrame(render);
+ const render=t=>{if(stopped)return;if(!document.hidden){camera.position.set(0,2.15,zoom);camera.lookAt(0,1.65,0);if(model.userData.rig)model.userData.rig.position.y=Math.sin(t*.0018)*.018;renderer.render(scene,camera);}frame=requestAnimationFrame(render);};frame=requestAnimationFrame(render);
  return {rotate:a=>model.rotation.y+=a,dispose(){stopped=true;cancelAnimationFrame(frame);observer.disconnect();canvas.removeEventListener('wheel',wheel);disposeObject(scene);renderer.dispose();}};
 }

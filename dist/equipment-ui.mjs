@@ -1,8 +1,8 @@
-import {GRADES,SLOTS,MATERIALS,itemStats,gearRecipe,amount,canMaterials,equipmentStats,petStats} from './economy.mjs?v=0.4';
-import {stats,CLASSES} from './engine.mjs?v=0.4';
-import {REGIONS,regionUnlocked} from './regions.mjs?v=0.4';
-import {itemIcon} from './avatar.mjs?v=0.4';
-import {score,itemScore,compareItem,bestEquipment,filterEquipment,enhancementPlan,ascensionRecipe,salvageRecipe,sourceMode} from './equipment-system.mjs?v=0.4';
+import {GRADES,SLOTS,MATERIALS,itemStats,gearRecipe,amount,canMaterials,equipmentStats,petStats} from './economy.mjs?v=0.5';
+import {stats,CLASSES} from './engine.mjs?v=0.5';
+import {REGIONS,regionUnlocked} from './regions.mjs?v=0.5';
+import {itemIcon} from './avatar.mjs?v=0.5';
+import {score,itemScore,compareItem,bestEquipment,filterEquipment,enhancementPlan,ascensionRecipe,salvageRecipe,sourceMode} from './equipment-system.mjs?v=0.5';
 const labels={hp:'Sinh lực',mp:'Linh lực',atk:'Công',def:'Thủ'},tiers=['','I','II','III','IV'];
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const name=it=>`${SLOTS[it.slot].name} · ${tiers[it.tier]} +${it.enhance}`;
@@ -10,7 +10,7 @@ const numbers=v=>Object.entries(labels).map(([k,label])=>`<span>${label} <b>${v[
 const badge=it=>`<span class="grade-tag rarity-${it.grade}">${GRADES[it.grade].color} · ${GRADES[it.grade].name}</span>`;
 const tabs={craft:'Chế tạo',enhance:'Cường hóa',merge:'Ghép bậc',ascend:'Thăng phẩm'};
 const view={grade:'all',status:'all',order:'power',page:0,target:8,quantity:1,tab:'craft'};
-export function characterSummary(s){const total=stats(s),gear=equipmentStats(s),pet=petStats(s);return `<div class="character-power"><span>LỰC CHIẾN <strong>${score(total).toLocaleString('vi-VN')}</strong></span><div>${numbers(total)}</div></div><details class="stat-breakdown"><summary>Chi tiết nguồn chỉ số</summary><table class="craft-table"><tr><th>Nguồn</th>${Object.values(labels).map(n=>`<th>${n}</th>`).join('')}</tr>${[['Nhân vật & tu luyện',Object.fromEntries(Object.keys(labels).map(k=>[k,total[k]-gear[k]-pet[k]]))],['Trang bị',gear],['Pet đang chọn',pet],['Tổng cộng',total]].map(([n,v])=>`<tr><td>${n}</td>${Object.keys(labels).map(k=>`<td>${v[k]}</td>`).join('')}</tr>`).join('')}</table><p>Lực chiến Long Mạch = HP + 2×MP + 10×Công + 15×Thủ. Điểm tham khảo; từng chỉ số vẫn quyết định lối chơi.</p></details>`;}
+export function characterSummary(s){const total=stats(s),gear=equipmentStats(s),pet=petStats(s);return `<div class="character-power"><span>LỰC CHIẾN <strong>${score(total).toLocaleString('vi-VN')}</strong></span><div>${numbers(total)}</div></div><details class="stat-breakdown"><summary>Chi tiết nguồn chỉ số</summary><table class="craft-table"><tr><th>Nguồn</th>${Object.values(labels).map(n=>`<th>${n}</th>`).join('')}</tr>${[['Nhân vật, tu luyện & thú cưỡi',Object.fromEntries(Object.keys(labels).map(k=>[k,total[k]-gear[k]-pet[k]]))],['Trang bị',gear],['Pet đang chọn',pet],['Tổng cộng',total]].map(([n,v])=>`<tr><td>${n}</td>${Object.keys(labels).map(k=>`<td>${v[k]}</td>`).join('')}</tr>`).join('')}</table><p>Lực chiến Long Mạch = HP + 2×MP + 10×Công + 15×Thủ. Điểm tham khảo; từng chỉ số vẫn quyết định lối chơi.</p></details>`;}
 export function renderEquipment(which,c,ui){if(!['inventory','forge'].includes(which))return false;const {game,showPanel,openModal,closeModal,save,hud}=c,s=game.s,$=q=>document.querySelector(q),$$=q=>[...document.querySelectorAll(q)],bag=which==='inventory';
  const refresh=()=>{hud();save();showPanel(which);};
  const navigate=(dest,id)=>{if(id)ui.selected=id;showPanel(dest);};

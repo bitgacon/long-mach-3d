@@ -1,4 +1,4 @@
-import {SLOTS,GRADES,MATERIALS,RECIPES,itemStats,gearRecipe,enhancementRecipe,canMaterials,spendMaterials,addMaterial} from './economy.mjs?v=0.4';
+import {SLOTS,GRADES,MATERIALS,RECIPES,itemStats,gearRecipe,enhancementRecipe,canMaterials,spendMaterials,addMaterial} from './economy.mjs?v=0.5';
 // A transparent local score, not MIR4's undisclosed Power Score formula.
 export const score=v=>Math.round((v.hp||0)+(v.mp||0)*2+(v.atk||0)*10+(v.def||0)*15);
 export const itemScore=it=>it?score(itemStats(it)):0;

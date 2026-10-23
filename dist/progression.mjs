@@ -1,6 +1,6 @@
-import {ascensionRecipe} from './equipment-system.mjs?v=0.4';
-import {GRADES,MATERIALS,SLOTS,PETS,amount,addMaterial,syncLegacy,canMaterials,spendMaterials,gearRecipe,enhancementRecipe,newItem} from './economy.mjs?v=0.4';
-import {REGIONS,regionById,regionUnlocked,regionQuest,regionValue,mapNodes,mapEnemies,mapObstacles} from './regions.mjs?v=0.4';
+import {ascensionRecipe} from './equipment-system.mjs?v=0.5';
+import {GRADES,MATERIALS,SLOTS,PETS,amount,addMaterial,syncLegacy,canMaterials,spendMaterials,gearRecipe,enhancementRecipe,newItem} from './economy.mjs?v=0.5';
+import {REGIONS,regionById,regionUnlocked,regionQuest,regionValue,mapNodes,mapEnemies,mapObstacles} from './regions.mjs?v=0.5';
 export const craftingActions={
  fuseMaterial(kind,grade,batches=1){if(!MATERIALS[kind]||!Number.isInteger(grade)||grade<0||grade>=4||!Number.isInteger(batches)||batches<1||batches>1000)return false;if(!spendMaterials(this.s,{[kind]:10*batches},grade)){this.say('Chưa đủ nguyên liệu: mỗi lần ghép cần 10 cùng màu.');return false;}let trade=0;for(let i=0;i<batches;i++){let t=this.random()<.2;addMaterial(this.s,kind,grade+1,1,t);trade+=+t;}this.say(`Ghép thành công ${batches} ${MATERIALS[kind].name} ${GRADES[grade+1].color} · ${trade} giao dịch, ${batches-trade} khóa.`);return true;},
  refineStone(grade,batches=1){if(!Number.isInteger(grade)||!GRADES[grade]||!Number.isInteger(batches)||batches<1||batches>100)return false;if(!spendMaterials(this.s,{ore:2*batches,energy:batches},grade))return false;for(let i=0;i<batches;i++)addMaterial(this.s,'stone',grade,1,this.random()<.2);this.say(`Đã luyện ${batches} đá cường hóa ${GRADES[grade].color}.`);return true;},

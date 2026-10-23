@@ -1,4 +1,4 @@
-# Long Mạch 3D · Vọng Nguyệt — v0.4
+# Long Mạch 3D · Vọng Nguyệt — v0.5
 
 Game nhập vai 3D chơi đơn trên trình duyệt PC/điện thoại. Mỗi người chơi có tiến trình riêng trong trình duyệt. Đây là bản chơi đơn, chưa có chơi chung bản đồ.
 
@@ -72,3 +72,10 @@ Cường hóa hiện chắc chắn lên +8, khác vùng rủi ro của MIR4. Nh�
 - Phôi IV +8 được tiêu hao để thay nguyên liệu chính của nhóm ở màu kế tiếp; vẫn cần các nguyên liệu phụ và đồng. Kết quả I +0.
 - Phân giải có xác nhận: hoàn 50% nguyên liệu công thức gốc nhân số phôi I, làm tròn xuống; toàn bộ nhận lại bị khóa, không hoàn đồng/đá.
 - Kiểm thử bổ sung: `node test-equipment.mjs` (5 nhóm). Xem [đối chiếu nguồn](docs/MIR4-AUDIT-v0.4.md) và [QA v0.4](docs/QA-v0.4.md).
+
+
+## Bản 0.5 — Pet, thú cưỡi, võ học
+
+P: tám pet có xem 3D, kỹ năng riêng, hành vi Chủ động/Bảo vệ/Đi theo và bảo vật 3 cấp. U: bốn thú cưỡi mở theo vùng, huấn luyện tối đa 5, tốc độ và HP theo thú được chọn; V để cưỡi. L: nâng ba skill, xem MP/hồi chiêu/hiệu quả, chọn chuyên hóa từ bậc 2 và bật/tắt từng skill khi auto. Mô hình xem trước dùng cùng hình học trong bản đồ.
+
+Quy tắc, nguồn MIR4, chi phí và bằng chứng kiểm thử: [COMPANIONS-v0.5.md](docs/COMPANIONS-v0.5.md). Chạy thêm `node test-companions.mjs` (7 nhóm). Bản lưu cũ tự bổ sung dữ liệu mới, không reset.
