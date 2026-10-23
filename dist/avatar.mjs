@@ -1,5 +1,5 @@
 import * as T from './vendor/three.module.js';
-import {GRADES,SLOTS} from './economy.mjs';
+import {GRADES,SLOTS} from './economy.mjs?v=0.4';
 const skin=0xd6b28d,hair=0x20272b;
 function mesh(parent,geometry,color,x=0,y=0,z=0,metal=false,glow=0){const material=new T.MeshStandardMaterial({color,metalness:metal?.65:.12,roughness:metal?.3:.75,emissive:color,emissiveIntensity:glow});const m=new T.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;parent.add(m);return m;}
 const box=(p,w,h,d,c,x,y,z,metal=false)=>mesh(p,new T.BoxGeometry(w,h,d),c,x,y,z,metal);

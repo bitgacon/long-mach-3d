@@ -1,6 +1,7 @@
-import {GRADES,MATERIALS,PETS,ensureEconomy,amount,addMaterial,syncLegacy,spendMaterials,equipmentStats,petStats,validateEconomy} from './economy.mjs';
-import {REGIONS,regionById,regionQuest,regionValue,emptyRegions,validateRegions} from './regions.mjs';
-import {craftingActions,regionActions} from './progression.mjs';
+import {equipmentActions} from './equipment-system.mjs?v=0.4';
+import {GRADES,MATERIALS,PETS,ensureEconomy,amount,addMaterial,syncLegacy,spendMaterials,equipmentStats,petStats,validateEconomy} from './economy.mjs?v=0.4';
+import {REGIONS,regionById,regionQuest,regionValue,emptyRegions,validateRegions} from './regions.mjs?v=0.4';
+import {craftingActions,regionActions} from './progression.mjs?v=0.4';
 export const VERSION=3, SAVE_KEY='long-mach-v3';
 export const CLASSES={
  kiem:{name:'Kiếm khách',title:'Lưỡi kiếm giữa phong ba',hp:190,atk:25,range:4.8,color:0x367d89,desc:'Cân bằng công thủ. Kiếm khí quét rộng, phù hợp tiếp cận trực diện.'},
@@ -172,4 +173,4 @@ export class Game {
  }
 }
 
-Object.assign(Game.prototype,craftingActions,regionActions({NPCS,SHRINES,OBSTACLES,NODE_DEFS,ENEMY_DEFS,ENEMY_TYPES,distance}));
+Object.assign(Game.prototype,equipmentActions,craftingActions,regionActions({NPCS,SHRINES,OBSTACLES,NODE_DEFS,ENEMY_DEFS,ENEMY_TYPES,distance}));

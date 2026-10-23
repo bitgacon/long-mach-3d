@@ -1,7 +1,7 @@
-import {makeCharacter,dressCharacter} from './avatar.mjs';
+import {makeCharacter,dressCharacter} from './avatar.mjs?v=0.4';
 import * as T from './vendor/three.module.js';
-import {CLASSES,NPCS,OBSTACLES,SHRINES,distance,stats} from './engine.mjs?v=0.3';
-import {GRADES,PETS} from './economy.mjs';
+import {CLASSES,NPCS,OBSTACLES,SHRINES,distance,stats} from './engine.mjs?v=0.4';
+import {GRADES,PETS} from './economy.mjs?v=0.4';
 const palette={ground:0x45624f,grass:0x597b58,dark:0x203e35,stone:0x829081,wood:0x594638,roof:0x234e53,gold:0xd8b771};
 export class World {
  constructor(canvas,game,labels){

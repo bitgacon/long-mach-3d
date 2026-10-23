@@ -1,4 +1,4 @@
-# Long Mạch 3D · Vọng Nguyệt — v0.3
+# Long Mạch 3D · Vọng Nguyệt — v0.4
 
 Game nhập vai 3D chơi đơn trên trình duyệt PC/điện thoại. Mỗi người chơi có tiến trình riêng trong trình duyệt. Đây là bản chơi đơn, chưa có chơi chung bản đồ.
 
@@ -37,7 +37,7 @@ Lấy cảm hứng từ vòng lặp nhiệm vụ, chiến đấu, khai thác và
 | Esc | Dừng auto hoặc đóng bảng |
 | R / V | Dùng thuốc / thú cưỡi |
 | C / K / L / P | Trang bị / nội công / kỹ năng / linh thú |
-| B / J / M / O | Nguyên liệu / nhật ký / bản đồ / cài đặt |
+| B / J / M / O | Túi đồ / nhật ký / bản đồ / cài đặt |
 | I / N | Lò rèn / thế giới và chuyển map |
 | H / Z / X | Đi về làng / xoay camera |
 | ? | Bảng phím tắt |
@@ -45,7 +45,7 @@ Lấy cảm hứng từ vòng lặp nhiệm vụ, chiến đấu, khai thác và
 Chuột: chạm đất để đi, kéo để xoay/nghiêng, cuộn để thu phóng. Điện thoại có cụm di chuyển và các nút thao tác. Thu gọn nhiệm vụ bằng tiêu đề CHÍNH TUYẾN để nhìn rộng hơn.
 
 ## Bản lưu
-Lưu tự động trong trình duyệt; xuất/nhập JSON tại Hành trang. Bản lưu 2D/v2 hợp lệ tự chuyển sang v3 và giữ nguyên khóa dữ liệu cũ. Bản local và website có kho lưu riêng: xuất/nhập để chuyển nhân vật. Reset/nhập có bước xác nhận và sao lưu bản hiện tại. Chuyển tab tạm dừng; auto không chạy khi đóng hoặc ẩn game.
+Lưu tự động trong trình duyệt; xuất/nhập JSON tại Túi đồ → Xuất / nhập lưu. Bản lưu 2D/v2 hợp lệ tự chuyển sang v3 và giữ nguyên khóa dữ liệu cũ. Bản local và website có kho lưu riêng: xuất/nhập để chuyển nhân vật. Reset/nhập có bước xác nhận và sao lưu bản hiện tại. Chuyển tab tạm dừng; auto không chạy khi đóng hoặc ẩn game.
 
 ## Phạm vi
 Đây là prototype 3D phong cách low-poly, chưa phải đồ họa điện ảnh. Chơi đơn, chưa có tài khoản máy chủ, đồng bộ đám mây, bang hội, PvP, giao dịch, MMO hoặc blockchain. Các hệ thống đó cần máy chủ và thiết kế kinh tế riêng ở giai đoạn tiếp theo.
@@ -61,3 +61,14 @@ Thư viện Three.js 0.180.0 đóng gói trong dist/vendor; giấy phép MIT kè
 Đã đọc trang giới thiệu, bách khoa và các bài Character/Craft/Forge/Spirit cùng Mirkit. Xem [phân tích nguồn và phạm vi](docs/MIR4-DOI-CHIEU.md).
 
 Cường hóa hiện chắc chắn lên +8, khác vùng rủi ro của MIR4. Nhãn giao dịch hiện lưu trên vật phẩm; chưa có chợ nhiều người. Ghép bậc chỉ dùng đồ +0 chưa mặc/chưa bảo vệ. Đồng và bình thuốc không chia phẩm chất.
+
+
+## Bản 0.4 — Nhân vật và lò rèn
+
+- Lực chiến và bảng nguồn chỉ số; túi đồ có lọc, sắp xếp, phân trang, so sánh và mặc tốt nhất có xem trước.
+- Thử đồ trên mô hình 3D không thay món đang mặc. B mở Túi đồ, C mở Nhân vật, I mở Lò rèn.
+- Bốn thẻ Chế tạo / Cường hóa / Ghép bậc / Thăng phẩm; chế tối đa 20 món mỗi lượt, nguồn thu thập theo màu.
+- Cường hóa chọn mức đích tới +8, báo tổng chi phí; thiếu tài nguyên thì không trừ một phần. Bảo vệ chặn cường hóa và tiêu hao.
+- Phôi IV +8 được tiêu hao để thay nguyên liệu chính của nhóm ở màu kế tiếp; vẫn cần các nguyên liệu phụ và đồng. Kết quả I +0.
+- Phân giải có xác nhận: hoàn 50% nguyên liệu công thức gốc nhân số phôi I, làm tròn xuống; toàn bộ nhận lại bị khóa, không hoàn đồng/đá.
+- Kiểm thử bổ sung: `node test-equipment.mjs` (5 nhóm). Xem [đối chiếu nguồn](docs/MIR4-AUDIT-v0.4.md) và [QA v0.4](docs/QA-v0.4.md).
