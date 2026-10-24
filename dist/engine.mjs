@@ -1,8 +1,12 @@
-import {ensureCompanions,validateCompanions,companionActions,mountSpeed,mountBonus,skillProfile} from './companions.mjs?v=0.5';
-import {equipmentActions} from './equipment-system.mjs?v=0.5';
-import {GRADES,MATERIALS,PETS,ensureEconomy,amount,addMaterial,syncLegacy,spendMaterials,equipmentStats,petStats,validateEconomy} from './economy.mjs?v=0.5';
-import {REGIONS,regionById,regionQuest,regionValue,emptyRegions,validateRegions} from './regions.mjs?v=0.5';
-import {craftingActions,regionActions} from './progression.mjs?v=0.5';
+import {migrateRoster,validateRoster,rosterActions} from './pet-roster.mjs?v=0.6';
+import {deployedPets} from './pet-data.mjs?v=0.6';
+import {classSkill,skillTargets} from './class-skills.mjs?v=0.6';
+import {harvestDuration,harvestNode,tickNodes,validateHarvest} from './gathering.mjs?v=0.6';
+import {ensureCompanions,validateCompanions,companionActions,mountSpeed,mountBonus,skillProfile} from './companions.mjs?v=0.6';
+import {equipmentActions} from './equipment-system.mjs?v=0.6';
+import {GRADES,MATERIALS,PETS,ensureEconomy,amount,addMaterial,syncLegacy,spendMaterials,equipmentStats,petStats,validateEconomy} from './economy.mjs?v=0.6';
+import {REGIONS,regionById,regionQuest,regionValue,emptyRegions,validateRegions} from './regions.mjs?v=0.6';
+import {craftingActions,regionActions} from './progression.mjs?v=0.6';
 export const VERSION=3, SAVE_KEY='long-mach-v3';
 export const CLASSES={
  kiem:{name:'Kiếm khách',title:'Lưỡi kiếm giữa phong ba',hp:190,atk:25,range:4.8,color:0x367d89,desc:'Cân bằng công thủ. Kiếm khí quét rộng, phù hợp tiếp cận trực diện.'},
@@ -30,9 +34,9 @@ export const BRANCHES={
  body:{group:'inner',name:'Thể phách',desc:'+32 HP mỗi bậc',icon:'山',cap:5,base:90,step:65,resource:'herb',amount:3,unlock:0},
  force:{group:'inner',name:'Chân khí',desc:'+6 công, +15 linh lực mỗi bậc',icon:'氣',cap:5,base:110,step:70,resource:'energy',amount:3,unlock:3},
  mind:{group:'inner',name:'Tâm pháp',desc:'+3 thủ, hồi linh lực nhanh hơn',icon:'心',cap:5,base:100,step:65,resource:'herb',amount:3,unlock:3},
- slash:{group:'skills',name:'Long trảm',desc:'Tăng sát thương kỹ năng diện rộng',icon:'✦',cap:5,base:100,step:70,resource:'energy',amount:2,unlock:0},
- nova:{group:'skills',name:'Địa chấn',desc:'Tăng sát thương và thời gian choáng',icon:'◎',cap:5,base:130,step:80,resource:'energy',amount:3,unlock:3},
- mend:{group:'skills',name:'Hồi nguyên',desc:'Tăng lượng HP hồi bằng linh lực',icon:'✚',cap:5,base:110,step:70,resource:'herb',amount:3,unlock:0}
+ slash:{group:'skills',name:'Long trảm',desc:'Tăng sát thương kỹ năng diện rộng',icon:'✦',cap:10,base:100,step:70,resource:'energy',amount:2,unlock:0},
+ nova:{group:'skills',name:'Địa chấn',desc:'Tăng sát thương và thời gian choáng',icon:'◎',cap:10,base:130,step:80,resource:'energy',amount:3,unlock:3},
+ mend:{group:'skills',name:'Hồi nguyên',desc:'Tăng lượng HP hồi bằng linh lực',icon:'✚',cap:10,base:110,step:70,resource:'herb',amount:3,unlock:0}
 };
 export const RESOURCE_NAMES={gold:'đồng',ore:'Thanh Thạch',herb:'linh thảo',energy:'linh khí',essence:'linh phách'};
 const objectives=(...pairs)=>pairs.map(([key,need,label])=>({key,need,label}));
@@ -53,7 +57,7 @@ export const QUESTS=[
 export const SHRINES=[{id:0,x:128,z:42},{id:1,x:154,z:48},{id:2,x:169,z:35}];
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
-function freshBase(){return {version:2,name:'Lữ khách',class:'kiem',started:false,x:32,z:97,hp:190,mp:100,level:1,xp:0,gold:30,ore:0,herb:0,energy:0,essence:0,potions:5,quest:0,upgrades:Object.fromEntries(Object.keys(BRANCHES).map(k=>[k,0])),spirits:{fox:0,crane:0,turtle:0},spirit:'fox',counts:{talk:0,wolves:0,cultists:0,mined:0,gathered:0,meditated:0,crafted:0,guardian:0,lord:0},seals:[],bounties:0,achievements:[],settings:{autoPotion:true,sound:false,quality:'high'},playTime:0};}
+function freshBase(){return {version:2,name:'Lữ khách',class:'kiem',started:false,x:32,z:97,hp:190,mp:100,level:1,xp:0,gold:30,ore:0,herb:0,energy:0,essence:0,potions:5,quest:0,upgrades:Object.fromEntries(Object.keys(BRANCHES).map(k=>[k,['slash','nova','mend'].includes(k)?1:0])),spirits:{fox:0,crane:0,turtle:0},spirit:'fox',counts:{talk:0,wolves:0,cultists:0,mined:0,gathered:0,meditated:0,crafted:0,guardian:0,lord:0},seals:[],bounties:0,achievements:[],settings:{autoPotion:true,sound:false,quality:'high'},playTime:0};}
 const isInt=(v,max=10000000)=>Number.isInteger(v)&&v>=0&&v<=max;
 function parseBase(raw){
  const v=typeof raw==='string'?JSON.parse(raw):raw;
@@ -75,15 +79,15 @@ function parseBase(raw){
  const n=freshBase();for(const k of Object.keys(n))if(Object.hasOwn(v,k))n[k]=structuredClone(v[k]);n.settings={autoPotion:v.settings?.autoPotion!==false,sound:v.settings?.sound===true,quality:v.settings?.quality==='low'?'low':'high'};n.hp=clamp(n.hp,1,stats(n).hp);n.mp=clamp(n.mp,0,stats(n).mp);return n;
 }
 
-export function fresh(){return ensureCompanions(ensureEconomy({...freshBase(),version:3,map:'van',regions:emptyRegions(),gatherGrade:-1}));}
+export function fresh(){return migrateRoster(ensureCompanions(ensureEconomy({...freshBase(),version:3,rulesRevision:6,harvest:{},map:'van',regions:emptyRegions(),gatherGrade:-1})));}
 export function parseSave(raw){
  const v=typeof raw==='string'?JSON.parse(raw):structuredClone(raw);
  if(!v||typeof v!=='object')throw Error('Bản lưu không hợp lệ');
- if(v.version===3){validateEconomy(v);validateRegions(v);validateCompanions(v);if(!Number.isInteger(v.gatherGrade)||v.gatherGrade< -1||v.gatherGrade>4)throw Error('Bộ lọc mỏ không hợp lệ');
+ if(v.version===3){if(v.rulesRevision!==6){ensureEconomy(v);ensureCompanions(v);for(const k of Object.keys(PETS)){v.petLevels[k]??=0;v.companions.treasures[k]??=0;}for(const k of ['slash','nova','mend'])v.upgrades[k]=Math.max(1,v.upgrades[k]);migrateRoster(v);v.rulesRevision=6;}if(['slash','nova','mend'].some(k=>v.upgrades[k]<1))throw Error('Kỹ năng phải từ cấp 1.');validateRoster(v);validateHarvest(v);validateEconomy(v);validateRegions(v);validateCompanions(v);if(!Number.isInteger(v.gatherGrade)||v.gatherGrade< -1||v.gatherGrade>4)throw Error('Bộ lọc mỏ không hợp lệ');
   const base=parseBase({...v,version:2,spirit:['fox','crane','turtle'].includes(v.spirit)?v.spirit:'fox',spirits:Object.fromEntries(['fox','crane','turtle'].map(k=>[k,v.petLevels[k]]))});
-  const n={...base,version:3,map:v.map,regions:structuredClone(v.regions),gatherGrade:v.gatherGrade,materials:structuredClone(v.materials),items:structuredClone(v.items),equipped:structuredClone(v.equipped),nextItemId:v.nextItemId,petLevels:structuredClone(v.petLevels),spirit:v.spirit,materialPreference:v.materialPreference};if(v.companions)n.companions=structuredClone(v.companions);ensureCompanions(n);syncLegacy(n);n.hp=Math.min(v.hp,stats(n).hp);n.mp=Math.min(v.mp,stats(n).mp);return n;
+  const n={...base,version:3,rulesRevision:6,petRoster:structuredClone(v.petRoster),petDeck:[...v.petDeck],petNextId:v.petNextId,harvest:structuredClone(v.harvest||{}),map:v.map,regions:structuredClone(v.regions),gatherGrade:v.gatherGrade,materials:structuredClone(v.materials),items:structuredClone(v.items),equipped:structuredClone(v.equipped),nextItemId:v.nextItemId,petLevels:structuredClone(v.petLevels),spirit:v.spirit,materialPreference:v.materialPreference};if(v.companions)n.companions=structuredClone(v.companions);ensureCompanions(n);syncLegacy(n);n.hp=Math.min(v.hp,stats(n).hp);n.mp=Math.min(v.mp,stats(n).mp);return n;
  }
- const n={...parseBase(v),version:3,map:'van',regions:emptyRegions(),gatherGrade:-1};ensureEconomy(n);ensureCompanions(n);return n;
+ const n={...parseBase(v),version:3,map:'van',regions:emptyRegions(),gatherGrade:-1};for(const k of ['slash','nova','mend'])n.upgrades[k]=Math.max(1,n.upgrades[k]);ensureEconomy(n);ensureCompanions(n);migrateRoster(n);n.rulesRevision=6;n.harvest={};return n;
 }
 export const activeQuest=s=>s.map&&s.map!=='van'?regionQuest(s):QUESTS[s.quest];
 
@@ -93,14 +97,14 @@ export function value(s,key){if(key.startsWith('regional'))return regionValue(s,
 export function questReady(s){const q=activeQuest(s);return !!q&&q.goals.every(g=>value(s,g.key)>=g.need);}
 export const ACHIEVEMENTS=[{title:'Người mở đường',key:'wolves',need:10,gold:100},{title:'Người nghe tiếng đá',key:'mined',need:15,gold:150},{title:'Người phá sương',key:'guardian',need:1,gold:180},{title:'Bình minh Vọng Nguyệt',key:'lord',need:1,gold:350}];
 export class Game {
- constructor(save=fresh(),random=Math.random){this.s=save;this.random=random;this.events=[];this.mode='off';this.farmType='wolf';this.target=null;this.selected=null;this.path=[];this.destination=null;this.channel=null;this.mount=false;this.paused=false;this.cooldowns={attack:0,slash:0,nova:0,mend:0,dash:0};this.ward=0;this.spiritClock=0;this.uiTime=0;this.lastWait='';this.actionTime=0;ensureEconomy(this.s);ensureCompanions(this.s);this.s.map??='van';this.s.regions??=emptyRegions();this.loadRegion();if(!this.walkable(this.s.x,this.s.z)){this.s.x=32;this.s.z=97;}}
+ constructor(save=fresh(),random=Math.random){this.s=save;this.random=random;this.events=[];this.mode='off';this.farmType='wolf';this.target=null;this.selected=null;this.path=[];this.destination=null;this.channel=null;this.mount=false;this.paused=false;this.cooldowns={attack:0,slash:0,nova:0,mend:0,dash:0};this.ward=0;this.spiritClock=0;this.uiTime=0;this.lastWait='';this.actionTime=0;ensureEconomy(this.s);ensureCompanions(this.s);migrateRoster(this.s);this.s.map??='van';this.s.regions??=emptyRegions();this.loadRegion();if(!this.walkable(this.s.x,this.s.z)){this.s.x=32;this.s.z=97;}}
  emit(type,data={}){this.events.push({type,...data});if(this.events.length>150)this.events.shift();}
  say(text){this.emit('notice',{text});}
  start(name,klass){if(!Object.hasOwn(CLASSES,klass))return;this.s.name=name.trim().slice(0,20)||'Lữ khách';this.s.class=klass;this.s.started=true;this.s.hp=stats(this.s).hp;this.say('Chào mừng đến Vân Sơn. Gặp trưởng làng để bắt đầu.');}
  addXP(n){let s=this.s;s.xp+=n;while(s.level<100&&s.xp>=s.level*100){s.xp-=s.level*100;s.level++;s.hp=stats(s).hp;s.mp=stats(s).mp;this.emit('level',{level:s.level});}}
  canPay(c){return Object.entries(c).every(([k,v])=>(MATERIALS[k]?amount(this.s,k,0):this.s[k])>=v);}
  pay(c){if(!this.canPay(c))return false;for(const [k,v]of Object.entries(c)){if(MATERIALS[k])spendMaterials(this.s,{[k]:v},0);else this.s[k]-=v;}return true;}
- upgrade(key){const b=BRANCHES[key];if(!b)return false;const s=this.s;if(s.quest<b.unlock){this.say('Mở khóa sau nhiệm vụ '+b.unlock+'.');return false;}if(s.upgrades[key]>=b.cap){this.say('Đã đạt bậc tối đa.');return false;}if(!this.pay(cost(s,key))){this.say('Chưa đủ tài nguyên để nâng cấp.');return false;}const old=stats(s).hp;s.upgrades[key]++;s.hp+=stats(s).hp-old;this.say(b.name+' đã lên bậc '+s.upgrades[key]+'.');this.emit('upgrade');return true;}
+ upgrade(key){const b=BRANCHES[key];if(!b)return false;const s=this.s;if(s.quest<b.unlock){this.say('Mở khóa sau nhiệm vụ '+b.unlock+'.');return false;}if(s.upgrades[key]>=b.cap){this.say('Đã đạt bậc tối đa.');return false;}if(!this.pay(cost(s,key))){this.say('Chưa đủ tài nguyên để nâng cấp.');return false;}const old=stats(s).hp;s.upgrades[key]++;s.hp+=stats(s).hp-old;this.say((classSkill(s,key)?.name||b.name)+' đã lên bậc '+s.upgrades[key]+'.');this.emit('upgrade');return true;}
  craft(){if(!this.pay({gold:20,herb:2})){this.say('Cần 20 đồng và 2 linh thảo.');return false;}this.s.potions++;this.s.counts.crafted++;this.say('Đã chế một bình hồi phục.');return true;}
  spiritUpgrade(key){if(this.s.quest<6||!Object.hasOwn(SPIRITS,key))return false;const lv=this.s.spirits[key];if(lv>=5)return false;if(!this.pay({gold:100+lv*90,essence:lv+1})){this.say('Chưa đủ đồng hoặc linh phách.');return false;}this.s.spirits[key]++;this.s.petLevels[key]=this.s.spirits[key];this.s.spirit=key;this.say(SPIRITS[key].name+' bậc '+this.s.spirits[key]+'.');return true;}
  selectSpirit(key){if(this.s.petLevels[key]>0){this.s.spirit=key;this.s.hp=Math.min(this.s.hp,stats(this.s).hp);return true;}return false;}
@@ -119,24 +123,24 @@ export class Game {
  unlocked(e){return this.s.map!=='van'||e.type!=='lord'||this.s.seals.length===3;}
  attack(kind='attack'){
   if(!['attack','slash','nova','mend','dash'].includes(kind)||this.paused||!this.s.started||this.cooldowns[kind]>0)return false;const s=this.s,st=stats(s),u=s.upgrades,skill=skillProfile(s,kind);
-  if(kind==='mend'){if(s.mp<25||s.hp>=st.hp)return false;s.mp-=25;this.cooldowns.mend=skill.cooldown;let n=Math.round(st.hp*skill.heal);s.hp=Math.min(st.hp,s.hp+n);this.emit('heal',{x:s.x,z:s.z,amount:n});return true;}
+  if(kind==='mend'){if(s.mp<skill.mp||s.hp>=st.hp)return false;s.mp-=skill.mp;this.mount=false;if(skill.shield)this.ward=Math.max(this.ward,skill.shield);this.cooldowns.mend=skill.cooldown;let n=Math.round(st.hp*skill.heal);s.hp=Math.min(st.hp,s.hp+n);this.emit('heal',{x:s.x,z:s.z,amount:n});return true;}
   if(kind==='dash'){this.cooldowns.dash=4;this.ward=.7;let a=this.facing||0;for(let i=0;i<12;i++){let nx=s.x+Math.sin(a)*.6,nz=s.z+Math.cos(a)*.6;if(this.walkable(nx,nz)){s.x=nx;s.z=nz;}}this.emit('cast',{kind,x:s.x,z:s.z,r:2});this.channel=null;return true;}
-  const mp=kind==='slash'?18:kind==='nova'?30:0;if(s.mp<mp){this.say('Chưa đủ linh lực.');return false;}
-  const range=kind==='nova'?10:kind==='slash'?st.range+3:st.range;
-  let targets=this.enemies.filter(e=>!e.dead&&this.unlocked(e)&&distance(s,e)<=range);
+  const mp=skill.mp||0;if(s.mp<mp){this.say('Chưa đủ linh lực.');return false;}
+  const range=kind==='attack'?st.range:skill.range;
+  let targets=this.enemies.filter(e=>!e.dead&&this.unlocked(e)&&distance(s,e)<=range);if(kind!=='attack')targets=skillTargets(s,skill,targets,this.selected,this.facing);
   if(kind==='attack'){const target=this.selected&&targets.find(e=>e.id===this.selected);targets=target?[target]:[this.nearest(targets)].filter(Boolean);}
-  if(!targets.length&&kind==='attack')return false;s.mp-=mp;this.cooldowns[kind]=skill.cooldown;this.mount=false;this.channel=null;this.emit('cast',{kind,x:s.x,z:s.z,r:range});
-  for(const e of targets){const multi=skill.multiplier;this.hit(e,Math.round(st.atk*multi),kind);if(kind==='nova')e.stun=1.2+u.nova*.25;this.facing=Math.atan2(e.x-s.x,e.z-s.z);}return true;
+  if(!targets.length&&kind==='attack')return false;s.mp-=mp;this.cooldowns[kind]=skill.cooldown;this.mount=false;this.channel=null;this.emit('cast',{kind,x:s.x,z:s.z,r:range,color:skill.color});
+  for(const e of targets){const multi=skill.multiplier;this.hit(e,Math.round(st.atk*multi),kind);if(kind==='nova')e.stun=skill.stun;this.facing=Math.atan2(e.x-s.x,e.z-s.z);}return true;
  }
  hit(e,n,kind){if(e.dead)return;e.hp-=n;this.emit('damage',{id:e.id,x:e.x,z:e.z,amount:n,kind});if(e.hp>0)return;e.dead=e.boss?999999:18;e.wind=0;this.s.gold+=e.gold;this.addXP(e.xp);if(e.type==='wolf')this.s.counts.wolves++;if(e.type==='cultist')this.s.counts.cultists++;if(this.s.map==='van'){if(e.type==='guardian')this.s.counts.guardian=1;if(e.type==='lord')this.s.counts.lord=1;}else{const r=this.s.regions[this.s.map];if(e.boss)r.boss=1;else r.kills++;}const grade=this.getRegion().grade;addMaterial(this.s,'essence',grade,e.boss?5:1);if(e.boss)addMaterial(this.s,'feather',grade,4);if(this.random()<.28)addMaterial(this.s,'herb',grade);this.emit('kill',{id:e.id,x:e.x,z:e.z,boss:e.boss});if(e.boss)this.say('Đã hạ '+e.name+'! Quay lại trả nhiệm vụ.');}
  interact(id){
   if(this.paused||!this.s.started)return;const portal=this.getRegion().portal;if((id==='portal'||!id)&&distance(this.s,portal)<5){this.emit('panel',{panel:'atlas'});return;}if(this.s.map!=='van'&&this.regionalInteract(id)!==false)return;const s=this.s,npc=this.npcs.find(n=>(!id||n.id===id)&&distance(s,n)<5.5);
   if(npc){if(npc.id==='forge'){this.emit('panel',{panel:'forge'});return;}if(npc.id==='lam')s.counts.talk=1;const q=QUESTS[s.quest];if(q&&q.npc===npc.id&&questReady(s)){this.stop();this.emit('dialog',{npc:npc.name,text:q.story,claim:true});}else this.emit('dialog',{npc:npc.name,text:npc.id==='lam'?'Hãy đi theo dấu long mạch. Ta sẽ giữ ngọn đèn sáng cho ngày con trở về.':'Tăng sức mạnh trước khi tiến vào Vọng Nguyệt. Hãy nhớ tránh vòng đỏ báo đòn đánh.',claim:false});return;}
   const shrine=this.shrines.find(n=>(!id||id==='seal'+n.id)&&distance(s,n)<4&&!s.seals.includes(n.id));if(shrine){if(s.quest<9){this.say('Phong ấn chưa đáp lại. Tiếp tục chính tuyến.');return;}this.beginChannel('seal',shrine,3.5);return;}
-  const node=this.nodes.find(n=>(!id||n.id===id)&&n.cd<=0&&distance(s,n)<4);if(node){this.beginChannel(node.type,node,1.8);return;}this.say('Đến gần NPC, tài nguyên hoặc trụ phong ấn để tương tác.');
+  const node=this.nodes.find(n=>(!id||n.id===id)&&n.cd<=0&&distance(s,n)<4);if(node){this.beginChannel(node.type,node,harvestDuration(s,node.type));return;}this.say('Đến gần NPC, tài nguyên hoặc trụ phong ấn để tương tác.');
  }
  beginChannel(type,obj,duration){if(this.channel?.id===obj.id&&this.channel.type===type)return;this.channel={type,id:obj.id,time:duration,total:duration};this.path=[];this.destination=null;this.mount=false;}
- claim(){if(this.s.map!=='van')return false;const q=QUESTS[this.s.quest];if(!q||!questReady(this.s)||distance(this.s,NPCS.find(n=>n.id===q.npc))>6)return false;this.s.gold+=q.gold;this.addXP(q.xp);this.s.quest++;if(this.s.quest===6){this.s.spirits.fox=Math.max(1,this.s.spirits.fox);this.s.petLevels.fox=this.s.spirits.fox;ensureCompanions(this.s);addMaterial(this.s,'essence',0,4);this.say('Mở khóa Hỏa hồ và thú cưỡi! Nhấn V để cưỡi.');}else this.say(this.s.quest===QUESTS.length?'Hoàn thành hai chương! Vân Sơn đã được cứu.':'Nhiệm vụ mới: '+QUESTS[this.s.quest].title);this.emit('quest');return true;}
+ claim(){if(this.s.map!=='van')return false;const q=QUESTS[this.s.quest];if(!q||!questReady(this.s)||distance(this.s,NPCS.find(n=>n.id===q.npc))>6)return false;this.s.gold+=q.gold;this.addXP(q.xp);this.s.quest++;if(this.s.quest===6){this.s.spirits.fox=Math.max(1,this.s.spirits.fox);this.s.petLevels.fox=this.s.spirits.fox;ensureCompanions(this.s);if(!this.s.petRoster.some(p=>p.species==='fox'))this.s.petRoster.push({id:'pet-'+this.s.petNextId++,species:'fox',rank:1,treasure:0,protected:false});if(!this.s.petDeck.length)this.s.petDeck.push(this.s.petRoster.find(p=>p.species==='fox').id);addMaterial(this.s,'essence',0,4);this.say('Mở khóa Hỏa hồ và thú cưỡi! Nhấn V để cưỡi.');}else this.say(this.s.quest===QUESTS.length?'Hoàn thành hai chương! Vân Sơn đã được cứu.':'Nhiệm vụ mới: '+QUESTS[this.s.quest].title);this.emit('quest');return true;}
  bounty(){const available=Math.floor((this.s.counts.wolves+this.s.counts.cultists)/10)-this.s.bounties;if(available<1)return false;this.s.bounties++;this.s.gold+=120;addMaterial(this.s,'ore',0,2);this.say('Truy nã hoàn tất: +120 đồng, +2 Thanh Thạch.');return true;}
  achievement(i){const a=ACHIEVEMENTS[i];if(!a||this.s.achievements.includes(i)||value(this.s,a.key)<a.need)return false;this.s.achievements.push(i);this.s.gold+=a.gold;this.say('Nhận thành tựu: '+a.title);return true;}
  toggleMount(){ensureCompanions(this.s);if(this.s.quest<6){this.say('Thú cưỡi mở sau nhiệm vụ Tiếng vọng người giữ ấn.');return;}this.mount=!this.mount;this.say(this.mount?'Đã lên thú cưỡi. Chiến đấu sẽ tự xuống.':'Đã xuống thú cưỡi.');}
@@ -145,7 +149,7 @@ export class Game {
   if(this.mode==='quest'&&this.s.map!=='van')return this.regionalAuto();const s=this.s;let action=this.mode,enemyType=this.farmType,nodeType=action;
   if(this.canAuto('mend')&&s.hp>0&&s.hp<stats(s).hp*.65)this.attack('mend');
   const threat=this.nearest(this.enemies.filter(e=>!e.dead&&this.unlocked(e)&&distance(s,e)<e.range+3));
-  if(threat&&action!=='farm'){this.path=[];this.selected=threat.id;if(this.canAuto('nova')&&this.cooldowns.nova<=0&&s.mp>=30)this.attack('nova');else if(this.canAuto('slash')&&this.cooldowns.slash<=0&&s.mp>=18)this.attack('slash');else if(distance(s,threat)<=stats(s).range)this.attack();else this.navigate(threat.x,threat.z);return;}
+  if(threat&&action!=='farm'){this.path=[];this.selected=threat.id;if(this.canAuto('nova')&&this.cooldowns.nova<=0&&s.mp>=skillProfile(s,'nova').mp)this.attack('nova');else if(this.canAuto('slash')&&this.cooldowns.slash<=0&&s.mp>=skillProfile(s,'slash').mp)this.attack('slash');else if(distance(s,threat)<=stats(s).range)this.attack();else this.navigate(threat.x,threat.z);return;}
   if(action==='quest'){const q=QUESTS[s.quest];if(!q){this.stop();this.say('Đã hoàn thành chính tuyến. Chọn auto farm hoặc thu thập để tiếp tục.');return;}if(questReady(s)||q.goals[0]?.key==='talk'){const n=NPCS.find(n=>n.id===q.npc);if(distance(s,n)<4.8){this.interact(n.id);}else this.navigate(n.x,n.z+2);return;}
    const goal=q.goals.find(g=>value(s,g.key)<g.need);if(['wolves','cultists','guardian','lord'].includes(goal.key)){action='farm';enemyType={wolves:'wolf',cultists:'cultist',guardian:'guardian',lord:'lord'}[goal.key];}
    else if(['mined','gathered','meditated'].includes(goal.key)){nodeType={mined:'ore',gathered:'herb',meditated:'energy'}[goal.key];action='gather';}
@@ -154,24 +158,24 @@ export class Game {
   }
   if(action==='farm'){
    const e=this.nearest(this.enemies.filter(e=>!e.dead&&e.type===enemyType&&this.unlocked(e)));
-   if(!e){this.path=[];this.wait('Đang chờ mục tiêu tái xuất…');return;}this.lastWait='';this.target=e.id;this.selected=e.id;let d=distance(s,e);if(d<=stats(s).range*.85){this.path=[];this.destination=null;if(e.wind>.1){const dx=s.x-e.x,dz=s.z-e.z,a=Math.atan2(dx||1,dz||1);this.facing=a;if(this.canAuto('dash')&&this.cooldowns.dash<=0)this.attack('dash');}else{if(this.canAuto('nova')&&s.mp>=30&&this.cooldowns.nova<=0)this.attack('nova');else if(this.canAuto('slash')&&s.mp>=18&&this.cooldowns.slash<=0)this.attack('slash');else this.attack();}}else this.navigate(e.x,e.z);return;
+   if(!e){this.path=[];this.wait('Đang chờ mục tiêu tái xuất…');return;}this.lastWait='';this.target=e.id;this.selected=e.id;let d=distance(s,e);if(d<=stats(s).range*.85){this.path=[];this.destination=null;if(e.wind>.1){const dx=s.x-e.x,dz=s.z-e.z,a=Math.atan2(dx||1,dz||1);this.facing=a;if(this.canAuto('dash')&&this.cooldowns.dash<=0)this.attack('dash');}else{if(this.canAuto('nova')&&s.mp>=skillProfile(s,'nova').mp&&this.cooldowns.nova<=0)this.attack('nova');else if(this.canAuto('slash')&&s.mp>=skillProfile(s,'slash').mp&&this.cooldowns.slash<=0)this.attack('slash');else this.attack();}}else this.navigate(e.x,e.z);return;
   }
-  if(['ore','herb','energy'].includes(nodeType)){const node=this.nearest(this.nodes.filter(n=>n.type===nodeType&&n.cd<=0&&(this.s.gatherGrade<0||n.grade===this.s.gatherGrade)));if(!node){this.path=[];this.wait('Không có mỏ sẵn sàng đúng bộ lọc. Đổi màu mỏ hoặc chờ hồi phục…');return;}this.lastWait='';if(distance(s,node)<3.5)this.beginChannel(node.type,node,1.8);else this.navigate(node.x,node.z);}
+  if(['ore','herb','energy'].includes(nodeType)){const node=this.nearest(this.nodes.filter(n=>n.type===nodeType&&n.cd<=0&&(this.s.gatherGrade<0||n.grade===this.s.gatherGrade)));if(!node){this.path=[];this.wait('Không có mỏ sẵn sàng đúng bộ lọc. Đổi màu mỏ hoặc chờ hồi phục…');return;}this.lastWait='';if(distance(s,node)<3.5)this.beginChannel(node.type,node,harvestDuration(s,node.type));else this.navigate(node.x,node.z);}
  }
  update(dt,input={x:0,z:0}){
   if(this.paused||!this.s.started)return;dt=clamp(dt,0,.1);const s=this.s;s.hp=Math.min(s.hp,stats(s).hp);this.moving=false;s.playTime+=dt;for(const k of Object.keys(this.cooldowns))this.cooldowns[k]=Math.max(0,this.cooldowns[k]-dt);this.ward=Math.max(0,this.ward-dt);s.mp=Math.min(stats(s).mp,s.mp+dt*(4+s.upgrades.mind*.8));
   if(input.x||input.z)this.move(input.x*100,input.z*100,dt,true);else{this.actionTime-=dt;if(this.mode!=='off'&&this.actionTime<=0&&!this.channel){this.autoStep();this.actionTime=.25;}if(this.path.length&&!this.channel){const p=this.path[0];if(distance(s,p)<.65)this.path.shift();else this.move(p.x-s.x,p.z-s.z,dt);}}
-  for(const n of this.nodes)n.cd=Math.max(0,n.cd-dt);
+  tickNodes(this,dt);
   for(const e of this.enemies){if(e.dead>0){if(!e.boss){e.dead=Math.max(0,e.dead-dt);if(e.dead<=0){e.hp=e.max;e.x=e.home.x;e.z=e.home.z;}}continue;}if(!this.unlocked(e))continue;e.cd-=dt;e.stun=Math.max(0,e.stun-dt);if(e.stun)continue;const d=distance(s,e),home=distance(e,e.home);
    if(e.wind>0){e.wind-=dt;if(e.wind<=0&&distance(s,e)<e.range+1.8&&this.ward<=0){const n=Math.max(3,e.atk-stats(s).def);s.hp-=n;this.mount=false;this.channel=null;this.emit('hurt',{amount:n,x:s.x,z:s.z});}continue;}
    if(d<e.aggro&&home<30){if(d>e.range){const nx=e.x+(s.x-e.x)/d*e.speed*dt,nz=e.z+(s.z-e.z)/d*e.speed*dt;if(this.walkable(nx,nz)){e.x=nx;e.z=nz;}}else if(e.cd<=0){e.wind=e.boss?1.2:.6;e.cd=e.boss?2.8:2;}}
    else if(home>1){e.x+=(e.home.x-e.x)/home*e.speed*dt;e.z+=(e.home.z-e.z)/home*e.speed*dt;if(home>25)e.hp=Math.min(e.max,e.hp+dt*20);}
   }
-  if(this.channel){const c=this.channel;c.time-=dt;if(c.time<=0){if(c.type==='seal'){if(!s.seals.includes(c.id))s.seals.push(c.id);this.say('Đã giải phong ấn '+s.seals.length+'/3.');this.emit('seal',{id:c.id});}else{const n=this.nodes.find(n=>n.id===c.id);if(n&&n.cd<=0){n.cd=13;addMaterial(s,c.type,n.grade);addMaterial(s,{ore:'steel',herb:'cloth',energy:'gem'}[c.type],n.grade,2);if(c.type==='energy')addMaterial(s,'feather',n.grade);if(s.map!=='van')s.regions[s.map][c.type]++;s.counts[{ore:'mined',herb:'gathered',energy:'meditated'}[c.type]]++;this.addXP(8);this.emit('gather',{x:n.x,z:n.z,kind:c.type});}}this.channel=null;}}
-  this.spiritClock+=dt;if(this.spiritClock>3){this.spiritClock=0;this.petPulse();}
+  if(this.channel){const c=this.channel;c.time-=dt;if(c.time<=0){if(c.type==='seal'){if(!s.seals.includes(c.id))s.seals.push(c.id);this.say('Đã giải phong ấn '+s.seals.length+'/3.');this.emit('seal',{id:c.id});}else{const n=this.nodes.find(n=>n.id===c.id);if(n&&n.cd<=0)harvestNode(this,n);}this.channel=null;}}
+  this.spiritClock+=dt;if(this.spiritClock>3){this.spiritClock=0;this.rosterPulse();}
   if(s.settings.autoPotion&&s.hp>0&&s.hp<stats(s).hp*.35)this.potion();
   if(s.hp<=0){s.hp=stats(s).hp;s.mp=stats(s).mp;Object.assign(s,this.getRegion().spawn);this.stop();this.mount=false;this.ward=4;for(const e of this.enemies){e.x=e.home.x;e.z=e.home.z;e.wind=0;e.hp=e.max;}this.emit('death');this.say('Đã hồi sinh tại tiền trạm, giữ nguyên tài nguyên. Auto đã dừng.');}
  }
 }
 
-Object.assign(Game.prototype,{getStats(){return stats(this.s);}},companionActions,equipmentActions,craftingActions,regionActions({NPCS,SHRINES,OBSTACLES,NODE_DEFS,ENEMY_DEFS,ENEMY_TYPES,distance}));
+Object.assign(Game.prototype,{getStats(){return stats(this.s);}},companionActions,equipmentActions,craftingActions,rosterActions,regionActions({NPCS,SHRINES,OBSTACLES,NODE_DEFS,ENEMY_DEFS,ENEMY_TYPES,distance}));

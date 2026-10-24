@@ -1,5 +1,6 @@
-import {PETS,canMaterials,spendMaterials} from './economy.mjs?v=0.5';
-import {regionUnlocked} from './regions.mjs?v=0.5';
+import {classSkill} from './class-skills.mjs?v=0.6';
+import {PETS,canMaterials,spendMaterials} from './economy.mjs?v=0.6';
+import {regionUnlocked} from './regions.mjs?v=0.6';
 export const MOUNTS={deer:{name:'Linh lộc',shape:'deer',grade:0,unlock:0,speed:13,icon:'鹿'},wolf:{name:'Ngân lang cưỡi',shape:'wolf',grade:1,unlock:1,speed:14,icon:'狼'},tiger:{name:'Bạch hổ cưỡi',shape:'tiger',grade:2,unlock:2,speed:15,icon:'虎'},dragon:{name:'Long thú',shape:'dragon',grade:4,unlock:4,speed:16,icon:'龍'}};
 export const SKILL_NAMES={slash:'Long trảm',nova:'Địa chấn',mend:'Hồi nguyên'};
 export const PET_EFFECTS={fox:'Linh hỏa: đánh 1 mục tiêu.',wolf:'Nanh bạc: đánh 1 mục tiêu, sát thương ×1,2.',phoenix:'Hỏa vũ: đánh tối đa 3 mục tiêu.',dragon:'Long tức: đánh tối đa 3 mục tiêu, sát thương ×1,4.',tiger:'Hổ uy: đánh 1 mục tiêu và gây choáng 0,6 giây.',crane:'Thanh phong: hồi HP cho chủ nhân.',deer:'Sinh khí: hồi HP và 6 linh lực.',turtle:'Hộ thân: khi có quái gần, miễn sát thương trong 0,5 giây mỗi nhịp.'};
@@ -9,7 +10,7 @@ export function mountCost(s,k){const m=MOUNTS[k];if(!m)return null;const lv=s.co
 export function mountReady(s,k){const m=MOUNTS[k];return !!m&&s.quest>=6&&regionUnlocked(s,m.unlock);}
 export function mountSpeed(s){const c=s.companions,m=MOUNTS[c?.mount];return m&&c.mountLevels[c.mount]?m.speed+(c.mountLevels[c.mount]-1)*.6:13;}
 export function mountBonus(s){const c=s.companions,m=MOUNTS[c?.mount],lv=c?.mountLevels[c.mount]||0;return {hp:lv?((lv-1)*12+m.grade*10):0,mp:0,atk:0,def:0};}
-export function skillProfile(s,k){const path=s.companions?.skillPaths[k]||'balanced',lv=s.upgrades[k]||0;return {mp:{slash:18,nova:30,mend:25,dash:0,attack:0}[k],cooldown:({slash:5,nova:9,mend:13,dash:4,attack:.65}[k])*(path==='swift'?.75:1),multiplier:(k==='slash'?1.8+lv*.28:k==='nova'?1.3+lv*.25:1)*(path==='power'?1.2:1),heal:(.25+lv*.045)*(path==='power'?1.2:1),stun:1.2+lv*.25};}
+export function skillProfile(s,k){const classProfile=classSkill(s,k);if(classProfile)return classProfile;const path=s.companions?.skillPaths[k]||'balanced',lv=s.upgrades[k]||0;return {mp:{slash:18,nova:30,mend:25,dash:0,attack:0}[k],cooldown:({slash:5,nova:9,mend:13,dash:4,attack:.65}[k])*(path==='swift'?.75:1),multiplier:(k==='slash'?1.8+lv*.28:k==='nova'?1.3+lv*.25:1)*(path==='power'?1.2:1),heal:(.25+lv*.045)*(path==='power'?1.2:1),stun:1.2+lv*.25};}
 export const companionActions={
  canAuto(k){return this.s.companions?.autoSkills[k]!==false;},
  setSkillPath(k,path){if(!Object.hasOwn(SKILL_NAMES,k)||!['balanced','power','swift'].includes(path)||path!=='balanced'&&this.s.upgrades[k]<2)return false;this.s.companions.skillPaths[k]=path;return true;},
